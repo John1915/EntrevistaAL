@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Entrevista RP — Ultra Simples v2.4</title>
+  <style>
+    :root{ --bg:#ffffff; --text:#0f172a; --muted:#475569; --line:#e2e8f0; --accent:#16a34a; --danger:#ef4444; --card:#f8fafc; }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:720px;margin:0 auto;padding:16px;padding-bottom:calc(80px + env(safe-area-inset-bottom));}
+    header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--line)}
+    .bar{display:flex;justify-content:center;align-items:center;padding:12px}
+    .title{font-weight:700}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 10px 24px rgba(15,23,42,.06);}
+    .center{display:flex;flex-direction:column;gap:12px}
+    input,button{font-size:18px}
+    input{width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}
+    .row{display:grid;gap:10px}
+    .row.cols2{grid-template-columns:1fr 1fr}
+    .btn{appearance:none;border:1px solid var(--line);background:#fff;padding:16px;border-radius:14px;cursor:pointer}
+    .btn.primary{background:linear-gradient(180deg,#22c55e,#16a34a);border:none;color:#fff}
+    .btn.danger{background:linear-gradient(180deg,#f87171,#ef4444);border:none;color:#fff}
+    .btn.warn{background:linear-gradient(180deg,#fbbf24,#f59e0b);border:none;color:#1c1917}
+    .btn.ghost{background:#fff}
+    .qtext{font-size:24px;line-height:1.35;margin:6px 0}
+    .ans{font-size:16px;color:var(--muted);border-left:4px solid var(--line);padding-left:10px}
+    .stat{font-size:14px;color:var(--muted)}
+    .big{font-size:28px}
+    .ok{color:var(--accent)} .bad{color:var(--danger)}
+    .hide{display:none}
+    .copyable{font-weight:700;cursor:pointer;}
+    .feed{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+    .feed .item{font-size:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px}
+    .feed .item.bad{border-left:4px solid var(--danger)}
+    .feed .item.mid{border-left:4px solid #f59e0b}
+    .feed .q{font-weight:600;margin-bottom:4px}
+    .feed .a{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header><div class="bar"><div class="title">Entrevista RP — Ultra Simples</div></div></header>
+  <main class="wrap">
+
+    <!-- PREP -->
+    <section id="view-prep" class="card center">
+      <label for="player">ID do Player (RP ou @Discord)</label>
+      <input id="player" placeholder="Ex.: 12345 ou @usuario" />
+      <div>
+        <div style="font-size:14px;color:var(--muted);margin-bottom:6px">Participou de discórdias ilegais?</div>
+        <div class="row cols2">
+          <button class="btn" data-flag="nao">Não</button>
+          <button class="btn" data-flag="sim">Sim</button>
+        </div>
+      </div>
+      <button id="btnStart" class="btn primary">Iniciar entrevista</button>
+      <div class="stat">Reprova automático ao 3º erro.</div>
+
+      <!-- CARD: Verificação de idade -->
+      <div class="card" id="ageCheck">
+        <div class="stat"><strong>Verificação de idade</strong></div>
+        <label class="stat" for="bornYear">Ano de nascimento (AAAA)</label>
+        <input id="bornYear" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="Ex.: 2006" />
+        <div class="stat">Idade: <strong><span id="ageValue">—</span></strong> • <span id="ageStatus"></span></div>
+      </div>
+    </section>
+
+    <!-- QUIZ -->
+    <section id="view-quiz" class="card center hide">
+      <div class="stat" id="mini">Pergunta <span id="step">1</span>/<span id="total">9</span> • Erros: <span id="err">0</span>/<span id="errMax">3</span></div>
+      <div class="qtext" id="qText">—</div>
+      <div class="ans" id="qAns"><strong>Gabarito:</strong> —</div>
+      <div class="row" style="grid-template-columns:1fr auto">
+        <div></div>
+        <button id="btnPartial" class="btn warn" title="Respondeu mas não justificou / incompleto">⚠️ Meio certo</button>
+      </div>
+      <div class="row cols2">
+        <button id="btnCorrect" class="btn primary big">✅ Confirmar</button>
+        <button id="btnWrong" class="btn danger big">❌ Recusar</button>
+      </div>
+      <div id="feed" class="feed"></div>
+    </section>
+
+    <!-- RESULT -->
+    <section id="view-result" class="card center hide">
+      <div id="resultLine" class="big"></div>
+      <div class="stat">ID do Player: <span id="dispID" class="copyable" title="Toque para copiar o ID"></span></div>
+      <div class="stat" id="resume"></div>
+      <div id="finalNotesWrap" class="hide">
+        <div class="stat"><strong>Observações</strong></div>
+        <div id="feedFinal" class="feed"></div>
+      </div>
+      <div class="row cols2" style="margin-top:8px">
+        <button id="btnCopyID" class="btn primary">Copiar ID</button>
+        <button id="btnCopy" class="btn">Copiar resumo</button>
+      </div>
+      <div class="row cols2"><button id="btnRestart" class="btn ghost">Reiniciar</button></div>
+    </section>
+
+  </main>
+
+  <script>
+    const QUESTIONS = [
+      { id:1,  d:'D', q:`Se um grupo inicia um sequestro em frente à Praça (área segura), leva a vítima de carro e tenta concluir a ação dentro de um restaurante, isso pode ser considerado válido? Explique qual regra foi quebrada e por quê.`, a:`Não é válida. Proibido levar ações para dentro de áreas seguras. Ações iniciadas fora não podem ser finalizadas dentro (abuso de área segura).` },
+      { id:2,  d:'F', q:`Um jogador está dentro do Hospital usando máscara e com um coldre visível. A polícia pode realizar uma abordagem? Qual a justificativa e limites?`, a:`Pode abordar. Áreas seguras permitem abordagem quando há armas/indícios (máscara + coldre). Abordagem de rotina, sem abuso.` },
+      { id:3,  d:'D', q:`Um jogador é Gerente de facção no 1º slot e, no 2º, quer trabalhar no Jurídico como advogado. É permitido?`, a:`Não. Líderes/Gerentes de facção não podem estar na polícia/jurídico no outro slot (e vice-versa).` },
+      { id:4,  d:'D', q:`Um jogador transferiu dinheiro do seu slot para o slot policial usando outro player como intermediário. Qual regra foi quebrada e qual a consequência se já possui 2 ADVs?`, a:`Transferência entre slots é proibida. Advertências somam no jogador (não no personagem). Na 3ª ADV: ban em ambos os slots.` },
+      { id:5,  d:'F', q:`Um assalto começa no Norte às 13h50 e ainda está em andamento às 14h10. Pode continuar?`, a:`Não. Assalto dura no máximo 10 minutos e o horário permitido no Norte encerra às 14:00. Deve encerrar.` },
+      { id:6,  d:'D', q:`Durante ação de pista, membros de facção oficial participaram sem roupa/mochila de identificação. O que acontece e por quê?`, a:`Prisão (ex.: 800 meses) e pode gerar ADV da cúpula para a facção. Regra existe para identificar claramente a organização em ação.` },
+      { id:7,  d:'F', q:`Um jogador rouba outro que está farmando e leva o veículo da área de farm. Quais regras foram quebradas?`, a:`Proibido roubar quem está farmando. Proibido levar veículos/itens de farm e VIP durante assaltos.` },
+      { id:8,  d:'F', q:`Qual é o horário permitido para realizar assaltos no Norte?`, a:`De 00:00 até 14:00.` },
+      { id:9,  d:'F', q:`Policial à paisana usa GPS para ver ocorrências e responde a QRU de Disparo. É permitido?`, a:`Não. Paisana não pode usar GPS/rádio para ocorrências nem solicitar QTH.` },
+      { id:10, d:'F', q:`O que caracteriza “anti-amor à vida” no RP?`, a:`São atos que desprezam a própria vida de modo irrealista — pular de locais altos para fugir, reagir sob mira, dirigir de forma suicida. No RP deve-se preservar a vida como na real; se reagir sob armas e morrer, o outro pode solicitar PD no Discord.` },
+      { id:11, d:'F', q:`O que é RDM no RP?`, a:`Matar sem motivo/roleplay plausível; se houver socorro imediato, não conta como RDM.` },
+    ];
+
+    // Parâmetros
+    const QUESTIONS_TO_ASK = 9;   // exatamente 9
+    const WRONG_LIMIT      = 3;   // reprova ao 3º erro
+    const AGE_MIN          = 18;
+
+    // Estado
+    let idx=0, asked=0, wrong=0, correct=0, partial=0,
+        order=[], playerID='', ilegais='nao', feed=[];
+
+    // Utils
+    const $ = s => document.querySelector(s);
+    function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+    function show(id){['view-prep','view-quiz','view-result'].forEach(v=>$('#'+v).classList.add('hide'));$('#'+id).classList.remove('hide')}
+    function render(){
+      const q=QUESTIONS[order[idx]];
+      $('#step').textContent = asked + 1; // 1..9
+      $('#total').textContent = QUESTIONS_TO_ASK;
+      $('#err').textContent = wrong;
+      $('#errMax').textContent = WRONG_LIMIT;
+      $('#qText').textContent = q.q;
+      $('#qAns').innerHTML = '<strong>Gabarito:</strong> ' + q.a;
+    }
+
+    // Ordem alternando fácil/difícil
+    function buildOrderAlternating(num){
+      const easy=[], hard=[];
+      for(let i=0;i<QUESTIONS.length;i++){ (QUESTIONS[i].d==='D'?hard:easy).push(i); }
+      shuffle(easy); shuffle(hard);
+      const out=[]; let e=0,h=0,turn='easy';
+      while(out.length<num && (e<easy.length || h<hard.length)){
+        if(turn==='easy' && e<easy.length){ out.push(easy[e++]); turn='hard'; continue; }
+        if(turn==='hard' && h<hard.length){ out.push(hard[h++]); turn='easy'; continue; }
+        if(e<easy.length) out.push(easy[e++]); else if(h<hard.length) out.push(hard[h++]);
+      }
+      return out.slice(0,num);
+    }
+
+    // Feed
+    function renderFeedTo(targetId){
+      const el=document.getElementById(targetId); if(!el) return;
+      el.innerHTML=feed.map(it=>{
+        const cls=it.type==='wrong'?'bad':'mid';
+        const icon=it.type==='wrong'?'❌':'⚠️';
+        return `<div class="item ${cls}"><div class="q">${icon} ${it.q}</div><div class="a"><strong>Gabarito:</strong> ${it.a}</div></div>`;
+      }).join('');
+    }
+    function renderFeed(){ renderFeedTo('feed'); }
+
+    // Idade
+    function updateAge(){
+      const inp=$('#bornYear'); if(!inp) return;
+      const now=new Date().getFullYear();
+      const y=parseInt(inp.value,10);
+      if(!y||y<1900||y>now){$('#ageValue').textContent='—';$('#ageStatus').textContent='';return;}
+      const age=now-y;
+      $('#ageValue').textContent=age;
+      $('#ageStatus').innerHTML=(age>=AGE_MIN)?'<span class="ok">✅ Maior de idade</span>':'<span class="bad">⚠️ Menor de idade</span>';
+    }
+
+    // Finalização
+    function finish(status){
+      show('view-result');
+      const icon=status==='pass'?'✅':'❌';
+      const text=status==='pass'?`Player ${playerID} aprovado`:`Player ${playerID} reprovou`;
+      $('#resultLine').textContent=`${icon} ${text}`;
+      $('#dispID').textContent=playerID;
+      const stats=`Acertos: ${correct} • Erros: ${wrong} • Meio certos: ${partial} • Perguntas: ${asked}/${QUESTIONS_TO_ASK}`;
+      const extra=(ilegais==='sim')?`<br><span class="bad">⚠️ Histórico: participou de discórdias ilegais — recomendamos penalidade.</span>`:'';
+      $('#resume').innerHTML=stats+extra;
+      if(feed.length){ $('#finalNotesWrap').classList.remove('hide'); renderFeedTo('feedFinal'); }
+      else { $('#finalNotesWrap').classList.add('hide'); }
+      if(playerID){ navigator.clipboard?.writeText(playerID); }
+    }
+
+    // Checa término: 3 erros reprova; 9 perguntas → aprova se erros <=2
+    function checkEnd(){
+      if(wrong >= WRONG_LIMIT){ finish('fail'); return true; }
+      if(asked >= QUESTIONS_TO_ASK){
+        const status = (wrong < WRONG_LIMIT) ? 'pass' : 'fail'; // <=2 erros passa
+        finish(status);
+        return true;
+      }
+      return false;
+    }
+
+    // Marcar ilegais
+    Array.from(document.querySelectorAll('[data-flag]')).forEach(b=>b.addEventListener('click',()=>{
+      ilegais=b.dataset.flag;
+      Array.from(document.querySelectorAll('[data-flag]')).forEach(x=>x.classList.remove('primary'));
+      b.classList.add('primary');
+    }));
+
+    // Iniciar
+    $('#btnStart').addEventListener('click',()=>{
+      playerID=$('#player').value.trim(); if(!playerID){$('#player').focus();return;}
+      order = buildOrderAlternating(QUESTIONS_TO_ASK);
+      idx=0; asked=0; wrong=0; correct=0; partial=0; feed=[];
+      show('view-quiz'); render(); renderFeed();
+    });
+
+    // Botões (cada clique conta 1 pergunta)
+    $('#btnCorrect').addEventListener('click',()=>{
+      correct++; asked++;
+      if(checkEnd()) return;
+      idx++; render();
+    });
+    $('#btnWrong').addEventListener('click',()=>{
+      const q=QUESTIONS[order[idx]];
+      feed.push({type:'wrong',q:q.q,a:q.a}); renderFeed();
+      wrong++; asked++;
+      if(checkEnd()) return;
+      idx++; render();
+    });
+    $('#btnPartial').addEventListener('click',()=>{
+      const q=QUESTIONS[order[idx]];
+      feed.push({type:'partial',q:q.q,a:q.a}); renderFeed();
+      partial++; asked++;
+      if(checkEnd()) return;
+      idx++; render();
+    });
+
+    // Resultado: copiar/clicar ID e resumo
+    $('#btnCopyID').addEventListener('click',()=>{ if(playerID){navigator.clipboard?.writeText(playerID);} });
+    $('#dispID').addEventListener('click',()=>{ if(playerID){navigator.clipboard?.writeText(playerID);} });
+    $('#btnCopy').addEventListener('click',()=>{
+      const hist=ilegais==='sim'?'SIM — participou de discórdias ilegais (recomendada penalidade)':'NÃO';
+      const result=(wrong >= WRONG_LIMIT)?'❌ REPROVADO':'✅ APROVADO';
+      const lines=[`# Registro — ${new Date().toLocaleString('pt-BR')}`,
+        `Player: ${playerID}`,
+        `Histórico de discórdias ilegais: ${hist}`,
+        `Resultado: ${result}`,
+        `Acertos: ${correct} | Erros: ${wrong} | Meio certos: ${partial}`,
+        `Perguntas totais: ${QUESTIONS_TO_ASK}`]
+        .concat(feed.length?['','Observações:'].concat(feed.map((f,i)=>`${i+1}. ${(f.type==='wrong'?'[❌]':'[⚠️]')} ${f.q}`)) : [])
+        .join('\n');
+      navigator.clipboard?.writeText(lines)
+    });
+    $('#btnRestart').addEventListener('click',()=>{show('view-prep')});
+
+    // Verificação de idade
+    $('#bornYear')?.addEventListener('input', updateAge);
+    $('#bornYear')?.addEventListener('change', updateAge);
+    updateAge();
+  </script>
+</body>
+</html>
